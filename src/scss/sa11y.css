@@ -447,6 +447,7 @@ html[data-sa11y-theme="dark"] {
 #sa11y-container #sa11y-readability-panel,
 #sa11y-container #sa11y-settings-panel,
 #sa11y-container #sa11y-outline-panel {
+  color: #FFFFFF;
   display: none;
   opacity: 0;
 }
@@ -455,6 +456,7 @@ html[data-sa11y-theme="dark"] {
 #sa11y-container #sa11y-readability-panel.sa11y-active,
 #sa11y-container #sa11y-settings-panel.sa11y-active,
 #sa11y-container #sa11y-outline-panel.sa11y-active {
+  color: #FFFFFF;
   display: block !important;
   opacity: 1 !important;
 }

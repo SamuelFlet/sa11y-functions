@@ -12,7 +12,7 @@ import { dirname } from 'path';
 export default [
   // ES6 standalone files
   {
-    input: 'src/js/sa11y.js',
+    input: 'src/sa11y.js',
     plugins: [
       nodeResolve(),
       css(),
@@ -30,7 +30,7 @@ export default [
   },
   // UMD standalone files
   {
-    input: 'src/js/sa11y.js',
+    input: 'src/sa11y.js',
     plugins: [
       nodeResolve(),
       css(),
@@ -40,6 +40,7 @@ export default [
       }),
     ],
     output: [
+      
       { file: 'dist/js/sa11y.umd.js', format: 'umd', name: 'Sa11y' },
       {
         file: 'dist/js/sa11y.umd.min.js', format: 'umd', name: 'Sa11y', plugins: [terser()],
@@ -48,7 +49,7 @@ export default [
   },
   // Custom checks ESM
   {
-    input: 'src/js/sa11y-custom-checks.js',
+    input: 'src/js/old/sa11y-custom-checks.js',
     plugins: [
       nodeResolve(),
       css(),
@@ -66,7 +67,7 @@ export default [
   },
   // Custom checks
   {
-    input: 'src/js/sa11y-custom-checks.js',
+    input: './src/js/old/sa11y-custom-checks.js',
     plugins: [
       nodeResolve(),
       css(),
@@ -76,72 +77,72 @@ export default [
       }),
     ],
     output: [
-      { file: 'dist/js/sa11y-custom-checks.umd.js', format: 'umd', name: 'CustomChecks' },
+      { file: 'dist/js/sa11y-custom-checks.umd.js', format: 'umd', name: 'Sa11yCustomChecks' },
       {
-        file: 'dist/js/sa11y-custom-checks.umd.min.js', format: 'umd', name: 'CustomChecks', plugins: [terser()],
+        file: 'dist/js/sa11y-custom-checks.umd.min.js', format: 'umd', name: 'Sa11yCustomChecks', plugins: [terser()],
       },
     ],
   },
   // Language files
-  {
-    input: 'src/js/lang/en.js',
-    plugins: [nodeResolve()],
-    output: [
-      { file: 'dist/js/lang/en.js', format: 'esm' },
-    ],
-  },
-  {
-    input: 'src/js/lang/en.js',
-    plugins: [nodeResolve()],
-    output: [
-      { file: 'dist/js/lang/en.umd.js', format: 'umd', name: 'Sa11yLangEn' },
-    ],
-  },
-  // French
-  {
-    input: 'src/js/lang/fr.js',
-    plugins: [nodeResolve()],
-    output: [
-      { file: 'dist/js/lang/fr.js', format: 'esm' },
-    ],
-  },
-  {
-    input: 'src/js/lang/fr.js',
-    plugins: [nodeResolve()],
-    output: [
-      { file: 'dist/js/lang/fr.umd.js', format: 'umd', name: 'Sa11yLangFr' },
-    ],
-  },
-  // Polish
-  {
-    input: 'src/js/lang/pl.js',
-    plugins: [nodeResolve()],
-    output: [
-      { file: 'dist/js/lang/pl.js', format: 'esm' },
-    ],
-  },
-  {
-    input: 'src/js/lang/pl.js',
-    plugins: [nodeResolve()],
-    output: [
-      { file: 'dist/js/lang/pl.umd.js', format: 'umd', name: 'Sa11yLangPl' },
-    ],
-  },
-  // Ukrainian
-  {
-    input: 'src/js/lang/ua.js',
-    plugins: [nodeResolve()],
-    output: [
-      { file: 'dist/js/lang/ua.js', format: 'esm' },
-    ],
-  },
-  {
-    input: 'src/js/lang/ua.js',
-    plugins: [nodeResolve()],
-    output: [
-      { file: 'dist/js/lang/ua.umd.js', format: 'umd', name: 'Sa11yLangUa' },
-    ],
-  },
+  // {
+  //   input: 'src/js/lang/en.js',
+  //   plugins: [nodeResolve()],
+  //   output: [
+  //     { file: 'dist/js/lang/en.js', format: 'esm' },
+  //   ],
+  // },
+  // {
+  //   input: 'src/js/lang/en.js',
+  //   plugins: [nodeResolve()],
+  //   output: [
+  //     { file: 'dist/js/lang/en.umd.js', format: 'umd', name: 'Sa11yLangEn' },
+  //   ],
+  // },
+  // // French
+  // {
+  //   input: 'src/js/lang/fr.js',
+  //   plugins: [nodeResolve()],
+  //   output: [
+  //     { file: 'dist/js/lang/fr.js', format: 'esm' },
+  //   ],
+  // },
+  // {
+  //   input: 'src/js/lang/fr.js',
+  //   plugins: [nodeResolve()],
+  //   output: [
+  //     { file: 'dist/js/lang/fr.umd.js', format: 'umd', name: 'Sa11yLangFr' },
+  //   ],
+  // },
+  // // Polish
+  // {
+  //   input: 'src/js/lang/pl.js',
+  //   plugins: [nodeResolve()],
+  //   output: [
+  //     { file: 'dist/js/lang/pl.js', format: 'esm' },
+  //   ],
+  // },
+  // {
+  //   input: 'src/js/lang/pl.js',
+  //   plugins: [nodeResolve()],
+  //   output: [
+  //     { file: 'dist/js/lang/pl.umd.js', format: 'umd', name: 'Sa11yLangPl' },
+  //   ],
+  // },
+  // // Ukrainian
+  // {
+  //   input: 'src/js/lang/ua.js',
+  //   plugins: [nodeResolve()],
+  //   output: [
+  //     { file: 'dist/js/lang/ua.js', format: 'esm' },
+  //   ],
+  // },
+  // {
+  //   input: 'src/js/lang/ua.js',
+  //   plugins: [nodeResolve()],
+  //   output: [
+  //     { file: 'dist/js/lang/ua.umd.js', format: 'umd', name: 'Sa11yLangUa' },
+  //   ],
+  // },
   // SCSS files
   {
     input: 'src/scss/sa11y.scss',
