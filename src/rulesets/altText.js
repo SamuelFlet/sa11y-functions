@@ -1,10 +1,9 @@
-import IssueGenerator from "../components/IssueGenerator";
+import annotate from "../components/annotate";
 import { sanitizeForHTML, fnIgnore } from "../js/utilities";
 import { ERROR, GOOD, WARNING } from "../constants";
 import { Lang } from "../js/lang/Lang";
-import { errorCount, setError, warningCount, setWarning } from "../constants";
 
-export default function checkAltText( images ) {
+export default function checkAltText($img) {
 	let containsAltTextStopWords = (alt) => {
 		const altUrl = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".tiff", ".svg"];
 
@@ -27,7 +26,7 @@ export default function checkAltText( images ) {
 		return hit;
 	};
 
-	images.forEach(function ($el, i) {
+	$img.forEach(($el) => {
 		const alt = $el.getAttribute("alt");
 		if (alt === null) {
 			if ($el.closest("a[href]")) {
@@ -35,13 +34,12 @@ export default function checkAltText( images ) {
 					fnIgnore($el.closest("a[href]"), "noscript").textContent.trim()
 						.length >= 1
 				) {
-					setError(errorCount+1);
 					$el.classList.add("sa11y-error-border");
 					$el
 						.closest("a[href]")
 						.insertAdjacentHTML(
 							"beforebegin",
-							IssueGenerator(
+							annotate(
 								ERROR,
 								Lang._("MISSING_ALT_LINK_BUT_HAS_TEXT_MESSAGE")
 							)
@@ -51,21 +49,19 @@ export default function checkAltText( images ) {
 						.length === 0
 				) {
 					$el.classList.add("sa11y-error-border");
-					setError(errorCount+1);
 					$el
 						.closest("a[href]")
 						.insertAdjacentHTML(
 							"beforebegin",
-							IssueGenerator(ERROR, Lang._("MISSING_ALT_LINK_MESSAGE"))
+							annotate(ERROR, Lang._("MISSING_ALT_LINK_MESSAGE"))
 						);
 				}
 			} else {
 				// General failure message if image is missing alt.
 				$el.classList.add("sa11y-error-border");
-				setError(errorCount+1);
 				$el.insertAdjacentHTML(
 					"beforebegin",
-					IssueGenerator(ERROR, Lang._("MISSING_ALT_MESSAGE"))
+					annotate(ERROR, Lang._("MISSING_ALT_MESSAGE"))
 				);
 			}
 		} else {
@@ -76,65 +72,58 @@ export default function checkAltText( images ) {
 
 			// Image fails if a stop word was found.
 			if (error[0] !== null && $el.closest("a[href]")) {
-				
 				$el.classList.add("sa11y-error-border");
-				setError(errorCount+1);
 				$el
 					.closest("a[href]")
 					.insertAdjacentHTML(
 						"beforebegin",
-						IssueGenerator(
+						annotate(
 							ERROR,
 							Lang.sprintf("LINK_IMAGE_BAD_ALT_MESSAGE", error[0], altText)
 						)
 					);
 			} else if (error[2] !== null && $el.closest("a[href]")) {
 				$el.classList.add("sa11y-error-border");
-				setError(errorCount+1);
 				$el
 					.closest("a[href]")
 					.insertAdjacentHTML(
 						"beforebegin",
-						IssueGenerator(
+						annotate(
 							ERROR,
 							Lang.sprintf("LINK_IMAGE_PLACEHOLDER_ALT_MESSAGE", altText)
 						)
 					);
 			} else if (error[1] !== null && $el.closest("a[href]")) {
 				$el.classList.add("sa11y-warning-border");
-				setWarning(warningCount+1);
 				$el
 					.closest("a[href]")
 					.insertAdjacentHTML(
 						"beforebegin",
-						IssueGenerator(
+						annotate(
 							WARNING,
 							Lang.sprintf("LINK_IMAGE_SUS_ALT_MESSAGE", error[1], altText)
 						)
 					);
 			} else if (error[0] !== null) {
 				$el.classList.add("sa11y-error-border");
-				setError(errorCount+1);
 				$el.insertAdjacentHTML(
 					"beforebegin",
-					IssueGenerator(
+					annotate(
 						ERROR,
 						Lang.sprintf("LINK_ALT_HAS_BAD_WORD_MESSAGE", altText, error[0])
 					)
 				);
 			} else if (error[2] !== null) {
 				$el.classList.add("sa11y-error-border");
-				setError(errorCount+1);
 				$el.insertAdjacentHTML(
 					"beforebegin",
-					IssueGenerator(ERROR, Lang.sprintf("ALT_PLACEHOLDER_MESSAGE", altText))
+					annotate(ERROR, Lang.sprintf("ALT_PLACEHOLDER_MESSAGE", altText))
 				);
 			} else if (error[1] !== null) {
 				$el.classList.add("sa11y-warning-border");
-				setWarning(warningCount+1);
 				$el.insertAdjacentHTML(
 					"beforebegin",
-					IssueGenerator(
+					annotate(
 						WARNING,
 						Lang.sprintf("ALT_HAS_SUS_WORD", error[1], altText)
 					)
@@ -149,42 +138,39 @@ export default function checkAltText( images ) {
 					$el.closest("a[href]").getAttribute("aria-hidden") === "true"
 				) {
 					$el.classList.add("sa11y-error-border");
-					setError(errorCount+1);
 					$el
 						.closest("a[href]")
 						.insertAdjacentHTML(
 							"beforebegin",
-							IssueGenerator(ERROR, Lang._("LINK_IMAGE_ARIA_HIDDEN"))
+							annotate(ERROR, Lang._("LINK_IMAGE_ARIA_HIDDEN"))
 						);
 				} else if (
 					fnIgnore($el.closest("a[href]"), "noscript").textContent.trim()
 						.length === 0
 				) {
 					$el.classList.add("sa11y-error-border");
-					setError(errorCount+1);
 					$el
 						.closest("a[href]")
 						.insertAdjacentHTML(
 							"beforebegin",
-							IssueGenerator(ERROR, Lang._("LINK_IMAGE_NO_ALT_TEXT"))
+							annotate(ERROR, Lang._("LINK_IMAGE_NO_ALT_TEXT"))
 						);
 				} else {
 					$el
 						.closest("a[href]")
 						.insertAdjacentHTML(
 							"beforebegin",
-							IssueGenerator(GOOD, Lang._("LINK_IMAGE_HAS_TEXT"))
+							annotate(GOOD, Lang._("LINK_IMAGE_HAS_TEXT"))
 						);
 				}
 			} else if (alt.length > 250 && $el.closest("a[href]")) {
 				// Link and contains alt text.
 				$el.classList.add("sa11y-warning-border");
-				setWarning(warningCount+1);
 				$el
 					.closest("a[href]")
 					.insertAdjacentHTML(
 						"beforebegin",
-						IssueGenerator(
+						annotate(
 							WARNING,
 							Lang.sprintf("LINK_IMAGE_LONG_ALT", altLength, altText)
 						)
@@ -197,12 +183,11 @@ export default function checkAltText( images ) {
 			) {
 				// Link and contains an alt text.
 				$el.classList.add("sa11y-warning-border");
-				setWarning(warningCount+1);
 				$el
 					.closest("a[href]")
 					.insertAdjacentHTML(
 						"beforebegin",
-						IssueGenerator(
+						annotate(
 							WARNING,
 							Lang.sprintf("LINK_IMAGE_ALT_WARNING", altText)
 						)
@@ -215,12 +200,11 @@ export default function checkAltText( images ) {
 			) {
 				// Contains alt text & surrounding link text.
 				$el.classList.add("sa11y-warning-border");
-				setWarning(warningCount+1);
 				$el
 					.closest("a[href]")
 					.insertAdjacentHTML(
 						"beforebegin",
-						IssueGenerator(
+						annotate(
 							WARNING,
 							Lang.sprintf("LINK_IMAGE_ALT_AND_TEXT_WARNING", altText)
 						)
@@ -234,26 +218,23 @@ export default function checkAltText( images ) {
 						figcaption.textContent.trim().length >= 1
 					) {
 						$el.classList.add("sa11y-warning-border");
-						setWarning(warningCount+1);
 						$el.insertAdjacentHTML(
 							"beforebegin",
-							IssueGenerator(WARNING, Lang._("IMAGE_FIGURE_DECORATIVE"))
+							annotate(WARNING, Lang._("IMAGE_FIGURE_DECORATIVE"))
 						);
 					}
 				} else {
 					$el.classList.add("sa11y-warning-border");
-					setWarning(warningCount+1);
 					$el.insertAdjacentHTML(
 						"beforebegin",
-						IssueGenerator(WARNING, Lang._("IMAGE_DECORATIVE"))
+						annotate(WARNING, Lang._("IMAGE_DECORATIVE"))
 					);
 				}
 			} else if (alt.length > 250) {
 				$el.classList.add("sa11y-warning-border");
-				setWarning(warningCount+1);
 				$el.insertAdjacentHTML(
 					"beforebegin",
-					IssueGenerator(
+					annotate(
 						WARNING,
 						Lang.sprintf("IMAGE_ALT_TOO_LONG", altLength, altText)
 					)
@@ -268,10 +249,9 @@ export default function checkAltText( images ) {
 							altText.trim().toLowerCase()
 					) {
 						$el.classList.add("sa11y-warning-border");
-						setWarning(warningCount+1);
 						$el.insertAdjacentHTML(
 							"beforebegin",
-							IssueGenerator(
+							annotate(
 								WARNING,
 								Lang.sprintf("IMAGE_FIGURE_DUPLICATE_ALT", altText)
 							)
@@ -279,14 +259,14 @@ export default function checkAltText( images ) {
 					} else {
 						$el.insertAdjacentHTML(
 							"beforebegin",
-							IssueGenerator(GOOD, Lang.sprintf("IMAGE_PASS", altText))
+							annotate(GOOD, Lang.sprintf("IMAGE_PASS", altText))
 						);
 					}
 				} else {
 					// If image has alt text - pass!
 					$el.insertAdjacentHTML(
 						"beforebegin",
-						IssueGenerator(GOOD, Lang.sprintf("IMAGE_PASS", altText))
+						annotate(GOOD, Lang.sprintf("IMAGE_PASS", altText))
 					);
 				}
 			}

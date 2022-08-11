@@ -1,8 +1,9 @@
 import { ERROR, GOOD, WARNING } from "../constants";
 import { escapeHTML } from "../js/utilities";
 import { Lang } from "../js/lang/Lang";
+import { errorCount, setError, warningCount, setWarning } from "../constants";
 
-export default function IssueGenerator(type, content, inline = false) {
+export default function annotate(type, content, inline = false) {
 	let message = content;
 	const validTypes = [ERROR, WARNING, GOOD];
 
@@ -10,6 +11,14 @@ export default function IssueGenerator(type, content, inline = false) {
 	if (validTypes.indexOf(type) === -1) {
 		throw Error(`Invalid type [${type}] for annotation`);
 	}
+
+	[type].forEach(($el) => {
+        if ($el === ERROR) {
+          setError(errorCount+1);
+        } else if ($el === WARNING) {
+          setWarning(warningCount+1);
+        }
+      });
 
 	const CSSName = {
 		[validTypes[0]]: "error",

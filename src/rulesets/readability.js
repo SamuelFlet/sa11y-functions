@@ -3,9 +3,9 @@ import { config } from "../sa11y.config";
 import { option } from "../js/options";
 import { Lang } from "../js/lang/Lang.js";
 let language = document.getElementsByTagName("html")[0].getAttribute("lang");
-export default function checkReadability({ readability }, elemToIgnore) {
+export default function checkReadability( $readability ) {
 	//Crude hack to add a period to the end of list items to make a complete sentence.
-	readability.forEach(($el) => {
+	$readability.forEach(($el) => {
 		const listText = $el.textContent;
 		if (listText.length >= 120) {
 			if (listText.charAt(listText.length - 1) !== ".") {
@@ -37,8 +37,8 @@ export default function checkReadability({ readability }, elemToIgnore) {
 	};
 
 	const readabilityarray = [];
-	for (let i = 0; i < readability.length; i++) {
-		const current = readability[i];
+	for (let i = 0; i < $readability.length; i++) {
+		const current = $readability[i];
 		if (current.textContent.replace(/ |\n/g, "") !== "") {
 			readabilityarray.push(current.textContent);
 		}

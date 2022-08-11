@@ -4,9 +4,9 @@ import settingPanelToggles from "./settingPanelToggles";
 import mainToggle from "./mainToggle";
 import skipToIssueTooltip from "./skipToIssueTooltip";
 import checkAll from "../js/checkAll";
-
-import { panelActive, setPanel } from "../constants";
+import { setPanel } from "../constants";
 import detectPageChanges from "./detectPageChanges";
+
 const checkRunPrevent = () => {
 	const { doNotRun } = option;
 	return doNotRun.trim().length > 0 ? document.querySelector(doNotRun) : false;

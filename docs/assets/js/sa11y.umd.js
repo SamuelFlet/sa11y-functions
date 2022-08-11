@@ -4705,17 +4705,48 @@
   	let $iframes = $findiframes.filter(
   		($el) => !containerExclusions.includes($el)
   	);
-  	$iframes.filter(($el) => $el.matches(option.videoContent));
-  	$iframes.filter(($el) => $el.matches(option.audioContent));
-  	$iframes.filter(($el) => $el.matches(option.dataVizContent));
-  	$iframes.filter(($el) => $el.matches(option.twitterContent));
-  	$iframes.filter(
+  	let $videos = $iframes.filter(($el) => $el.matches(option.videoContent));
+  	let $audio = $iframes.filter(($el) => $el.matches(option.audioContent));
+  	let $dataviz = $iframes.filter(($el) => $el.matches(option.dataVizContent));
+  	let $twitter = $iframes.filter(($el) => $el.matches(option.twitterContent));
+  	let $embeddedContent = $iframes.filter(
   		($el) => !$el.matches(option.embeddedContent)
   	);
 
-  	//Blockquotes
+  	// QA
+  	const $findstrongitalics = Array.from(
+  		container.querySelectorAll("strong, em")
+  	);
+  	let $strongitalics = $findstrongitalics.filter(
+  		($el) => !containerExclusions.includes($el)
+  	);
+
+  	const $findbadDevLinks = [];
+  	let $badDevLinks = $findbadDevLinks.filter(
+  		($el) => !containerExclusions.includes($el)
+  	);
+
+  	const $findPDFs = Array.from(container.querySelectorAll("a[href$='.pdf']"));
+  	let $checkPDF = $findPDFs.filter(($el) => !containerExclusions.includes($el));
+
+  	const $findtables = Array.from(
+  		container.querySelectorAll("table:not([role='presentation'])")
+  	);
+  	let $tables = $findtables.filter(($el) => !containerExclusions.includes($el));
+
+  	let $lang = document.querySelector("html").getAttribute("lang");
+
   	const $findblockquotes = Array.from(container.querySelectorAll("blockquote"));
   	let $blockquotes = $findblockquotes.filter(
+  		($el) => !containerExclusions.includes($el)
+  	);
+
+  	const $findallcaps = Array.from(
+  		container.querySelectorAll(
+  			"h1, h2, h3, h4, h5, h6, p, li:not([class^='sa11y']), blockquote"
+  		)
+  	);
+  	let $allCaps = $findallcaps.filter(
   		($el) => !containerExclusions.includes($el)
   	);
 
@@ -4730,16 +4761,27 @@
   	);
 
   	return {
-  		readability: $readability,
-  		inputs: $inputs,
-  		link: $links,
-  		p: $p,
-  		h: $h,
-  		h1: $h1,
-  		images: $img,
-  		iframe: $iframes,
-  		blockquotes: $blockquotes,
+  		$readability: $readability,
+  		$inputs: $inputs,
+  		$links: $links,
+  		$p: $p,
+  		$h: $h,
+  		$h1: $h1,
+  		$img: $img,
+  		$iframes: $iframes,
+  		$videos: $videos,
+  		$audio: $audio,
+  		$dataviz: $dataviz,
+  		$twitter: $twitter,
+  		$embeddedContent: $embeddedContent,
+  		$blockquotes: $blockquotes,
+  		$strongitalics: $strongitalics,
+  		$badDevLinks: $badDevLinks,
+  		$checkPDF: $checkPDF,
+  		$tables: $tables,
+  		$allCaps: $allCaps,
   		$contrast: $contrast,
+  		$lang: $lang,
   	};
   }
 
@@ -5177,7 +5219,7 @@
       }
     }
 
-  function IssueGenerator(type, content, inline = false) {
+  function annotate(type, content, inline = false) {
   	let message = content;
   	const validTypes = [ERROR, WARNING, GOOD];
 
@@ -5185,6 +5227,14 @@
   	if (validTypes.indexOf(type) === -1) {
   		throw Error(`Invalid type [${type}] for annotation`);
   	}
+
+  	[type].forEach(($el) => {
+          if ($el === ERROR) {
+            setError(errorCount+1);
+          } else if ($el === WARNING) {
+            setWarning(warningCount+1);
+          }
+        });
 
   	const CSSName = {
   		[validTypes[0]]: "error",
@@ -5205,46 +5255,62 @@
               </div>`;
   }
 
-  function annotateBanner (type, content)  {
+  function annotateBanner(type, content) {
   	let message = content;
 
-  	const validTypes = [
-  	  ERROR,
-  	  WARNING,
-  	  GOOD,
-  	];
+  	const validTypes = [ERROR, WARNING, GOOD];
 
   	if (validTypes.indexOf(type) === -1) {
-  	  throw Error(`Invalid type [${type}] for annotation`);
+  		throw Error(`Invalid type [${type}] for annotation`);
   	}
 
   	const CSSName = {
-  	  [validTypes[0]]: 'error',
-  	  [validTypes[1]]: 'warning',
-  	  [validTypes[2]]: 'good',
+  		[validTypes[0]]: "error",
+  		[validTypes[1]]: "warning",
+  		[validTypes[2]]: "good",
   	};
 
+  	// Update error or warning count.
+  	[type].forEach(($el) => {
+  		if ($el === ERROR) {
+  			setError(errorCount + 1);
+  		} else if ($el === WARNING) {
+  			setWarning(warningCount + 1);
+  		}
+  	});
+
   	// Check if content is a function & make translations easier.
-  	if (message && {}.toString.call(message) === '[object Function]') {
-  	  message = message
-  		.replaceAll(/<hr>/g, '<hr aria-hidden="true">')
-  		.replaceAll(/<a[\s]href=/g, '<a target="_blank" rel="noopener noreferrer" href=')
-  		.replaceAll(/<\/a>/g, `<span class="sa11y-visually-hidden"> (${Lang._('NEW_TAB')})</span></a>`)
-  		.replaceAll(/{r}/g, 'class="sa11y-red-text"');
-  	  message = escapeHTML(message);
+  	if (message && {}.toString.call(message) === "[object Function]") {
+  		message = message
+  			.replaceAll(/<hr>/g, '<hr aria-hidden="true">')
+  			.replaceAll(
+  				/<a[\s]href=/g,
+  				'<a target="_blank" rel="noopener noreferrer" href='
+  			)
+  			.replaceAll(
+  				/<\/a>/g,
+  				`<span class="sa11y-visually-hidden"> (${Lang._("NEW_TAB")})</span></a>`
+  			)
+  			.replaceAll(/{r}/g, 'class="sa11y-red-text"');
+  		message = escapeHTML(message);
   	}
 
-  	return `<div class="sa11y-instance sa11y-${CSSName[type]}-message-container"><div role="region" data-sa11y-annotation tabindex="-1" aria-label="${[type]}" class="sa11y-${CSSName[type]}-message" lang="${Lang._('LANG_CODE')}">${message}</div></div>`;
-    }
+  	return `<div class="sa11y-instance sa11y-${
+		CSSName[type]
+	}-message-container"><div role="region" data-sa11y-annotation tabindex="-1" aria-label="${[
+		type,
+	]}" class="sa11y-${CSSName[type]}-message" lang="${Lang._(
+		"LANG_CODE"
+	)}">${message}</div></div>`;
+  }
 
   // checkHeaders(headings,ignoreClasses)
 
-
-  function checkHeaders( h, h1) {
+  function checkHeaders($h, $h1) {
   	let prevLevel;
 
   	// For each heading on the page
-  	h.forEach(function ($el, i) {
+  	$h.forEach(function ($el, i) {
   		const text = computeTextNodeWithImage($el);
   		const htext = sanitizeForHTML(text);
   		let level;
@@ -5318,30 +5384,28 @@
 
   			// Heading errors
   			if (error !== null && $el.closest("a") !== null) {
-  				setError(errorCount+1);
   				$el.classList.add("sa11y-error-border");
-  				$el.closest('a').insertAdjacentHTML('afterend', IssueGenerator(ERROR, error, true));
+  				$el
+  					.closest("a")
+  					.insertAdjacentHTML("afterend", annotate(ERROR, error, true));
   				document
   					.querySelector("#sa11y-outline-list")
   					.insertAdjacentHTML("beforeend", liError);
   			} else if (error !== null) {
-  				setError(errorCount+1);
   				$el.classList.add("sa11y-error-border");
-  				$el.insertAdjacentHTML('beforebegin', IssueGenerator(ERROR, error));
+  				$el.insertAdjacentHTML("beforebegin", annotate(ERROR, error));
   				document
   					.querySelector("#sa11y-outline-list")
   					.insertAdjacentHTML("beforeend", liError);
   			} else if (warning !== null && $el.closest("a") !== null) {
-  				setWarning(warningCount+1);
-  				$el.classList.add("sa11y-warning-border");
-  				$el.closest('a').insertAdjacentHTML('afterend', IssueGenerator(WARNING, warning));
+  				$el
+  					.closest("a")
+  					.insertAdjacentHTML("afterend", annotate(WARNING, warning));
   				document
   					.querySelector("#sa11y-outline-list")
   					.insertAdjacentHTML("beforeend", liWarning);
   			} else if (warning !== null) {
-  				setWarning(warningCount+1);
-  				$el.classList.add("sa11y-warning-border");
-  				$el.insertAdjacentHTML('beforebegin', IssueGenerator(WARNING, warning));
+  				$el.insertAdjacentHTML("beforebegin", annotate(WARNING, warning));
   				document
   					.querySelector("#sa11y-outline-list")
   					.insertAdjacentHTML("beforeend", liWarning);
@@ -5353,176 +5417,211 @@
   		}
   	});
   	// Check to see there is at least one H1 on the page.
-  	if (h1.length === 0) {
-          const updateH1Outline = `<div class='sa11y-instance sa11y-missing-h1'>
-                    <span class='sa11y-badge sa11y-error-badge'><span aria-hidden='true'>&#10007;</span><span class='sa11y-visually-hidden'>${Lang._('ERROR')}</span></span>
-                    <span class='sa11y-red-text sa11y-bold'>${Lang._('PANEL_HEADING_MISSING_ONE')}</span>
+  	if ($h1.length === 0) {
+  		const updateH1Outline = `<div class='sa11y-instance sa11y-missing-h1'>
+                    <span class='sa11y-badge sa11y-error-badge'><span aria-hidden='true'>&#10007;</span><span class='sa11y-visually-hidden'>${Lang._(
+											"ERROR"
+										)}</span></span>
+                    <span class='sa11y-red-text sa11y-bold'>${Lang._(
+											"PANEL_HEADING_MISSING_ONE"
+										)}</span>
                 </div>`;
-          document.getElementById('sa11y-outline-header').insertAdjacentHTML('afterend', updateH1Outline);
-  		setError(errorCount+1);
-          document.getElementById('sa11y-container').insertAdjacentHTML('afterend', annotateBanner(ERROR, Lang._('HEADING_MISSING_ONE')));
-        }
+  		document
+  			.getElementById("sa11y-outline-header")
+  			.insertAdjacentHTML("afterend", updateH1Outline);
+  		document
+  			.getElementById("sa11y-container")
+  			.insertAdjacentHTML(
+  				"afterend",
+  				annotateBanner(ERROR, Lang._("HEADING_MISSING_ONE"))
+  			);
+  	}
   }
 
-  function checkLinkText (link)  {
-    const containsLinkTextStopWords = (textContent) => {
-      const urlText = [
-        'http',
-        '.asp',
-        '.htm',
-        '.php',
-        '.edu/',
-        '.com/',
-        '.net/',
-        '.org/',
-        '.us/',
-        '.ca/',
-        '.de/',
-        '.icu/',
-        '.uk/',
-        '.ru/',
-        '.info/',
-        '.top/',
-        '.xyz/',
-        '.tk/',
-        '.cn/',
-        '.ga/',
-        '.cf/',
-        '.nl/',
-        '.io/',
-        '.fr/',
-        '.pe/',
-        '.nz/',
-        '.pt/',
-        '.es/',
-        '.pl/',
-        '.ua/',
-      ];
+  function checkLinkText($links) {
+  	const containsLinkTextStopWords = (textContent) => {
+  		const urlText = [
+  			"http",
+  			".asp",
+  			".htm",
+  			".php",
+  			".edu/",
+  			".com/",
+  			".net/",
+  			".org/",
+  			".us/",
+  			".ca/",
+  			".de/",
+  			".icu/",
+  			".uk/",
+  			".ru/",
+  			".info/",
+  			".top/",
+  			".xyz/",
+  			".tk/",
+  			".cn/",
+  			".ga/",
+  			".cf/",
+  			".nl/",
+  			".io/",
+  			".fr/",
+  			".pe/",
+  			".nz/",
+  			".pt/",
+  			".es/",
+  			".pl/",
+  			".ua/",
+  		];
 
-      const hit = [null, null, null];
+  		const hit = [null, null, null];
 
-      // Flag partial stop words.
-      Lang._('PARTIAL_ALT_STOPWORDS').forEach((word) => {
-        if (
-          textContent.length === word.length && textContent.toLowerCase().indexOf(word) >= 0
-        ) {
-          hit[0] = word;
-        }
-        return false;
-      });
+  		// Flag partial stop words.
+  		Lang._("PARTIAL_ALT_STOPWORDS").forEach((word) => {
+  			if (
+  				textContent.length === word.length &&
+  				textContent.toLowerCase().indexOf(word) >= 0
+  			) {
+  				hit[0] = word;
+  			}
+  			return false;
+  		});
 
-      // Other warnings we want to add.
-      Lang._('WARNING_ALT_STOPWORDS').forEach((word) => {
-        if (textContent.
-          toLowerCase().indexOf(word) >= 0) {
-          hit[1] = word;
-        }
-        return false;
-      });
+  		// Other warnings we want to add.
+  		Lang._("WARNING_ALT_STOPWORDS").forEach((word) => {
+  			if (textContent.toLowerCase().indexOf(word) >= 0) {
+  				hit[1] = word;
+  			}
+  			return false;
+  		});
 
-      // Flag link text containing URLs.
-      urlText.forEach((word) => {
-        if (textContent.toLowerCase().indexOf(word) >= 0) {
-          hit[2] = word;
-        }
-        return false;
-      });
-      return hit;
-    };
+  		// Flag link text containing URLs.
+  		urlText.forEach((word) => {
+  			if (textContent.toLowerCase().indexOf(word) >= 0) {
+  				hit[2] = word;
+  			}
+  			return false;
+  		});
+  		return hit;
+  	};
 
-    link.forEach((el) => {
-      let linkText = computeAriaLabel(el);
-      const hasAriaLabelledBy = el.getAttribute('aria-labelledby');
-      const hasAriaLabel = el.getAttribute('aria-label');
-      let childAriaLabelledBy = null;
-      let childAriaLabel = null;
-      const hasTitle = el.getAttribute('title');
+  	$links.forEach((el) => {
+  		let linkText = computeAriaLabel(el);
+  		const hasAriaLabelledBy = el.getAttribute("aria-labelledby");
+  		const hasAriaLabel = el.getAttribute("aria-label");
+  		let childAriaLabelledBy = null;
+  		let childAriaLabel = null;
+  		const hasTitle = el.getAttribute("title");
 
-      if (el.children.length) {
-        const $firstChild = el.children[0];
-        childAriaLabelledBy = $firstChild.getAttribute('aria-labelledby');
-        childAriaLabel = $firstChild.getAttribute('aria-label');
-      }
+  		if (el.children.length) {
+  			const $firstChild = el.children[0];
+  			childAriaLabelledBy = $firstChild.getAttribute("aria-labelledby");
+  			childAriaLabel = $firstChild.getAttribute("aria-label");
+  		}
 
-      if (linkText === 'noAria') {
-        // Plain text content.
-        linkText = el.textContent.trim();
-        const $img = el.querySelector('img');
+  		if (linkText === "noAria") {
+  			// Plain text content.
+  			linkText = el.textContent.trim();
+  			const $img = el.querySelector("img");
 
-        // If an image exists within the link. Help with AccName computation.
-        if ($img) {
-          // Check if there's aria on the image.
-          const imgText = computeAriaLabel($img);
-          if (imgText !== 'noAria') {
-            linkText += imgText;
-          } else {
-            // No aria? Process alt on image.
-            linkText += $img ? ($img.getAttribute('alt') || '') : '';
-          }
-        }
-      }
+  			// If an image exists within the link. Help with AccName computation.
+  			if ($img) {
+  				// Check if there's aria on the image.
+  				const imgText = computeAriaLabel($img);
+  				if (imgText !== "noAria") {
+  					linkText += imgText;
+  				} else {
+  					// No aria? Process alt on image.
+  					linkText += $img ? $img.getAttribute("alt") || "" : "";
+  				}
+  			}
+  		}
 
-      const linkTextTrimmed = linkText.replace(/\s+/g, ' ').trim();
-      const error = containsLinkTextStopWords(fnIgnore(el, option.linkIgnoreSpan).textContent.replace(/[!*?↣↳→↓»↴]/g, '').trim());
+  		const linkTextTrimmed = linkText.replace(/\s+/g, " ").trim();
+  		const error = containsLinkTextStopWords(
+  			fnIgnore(el, option.linkIgnoreSpan)
+  				.textContent.replace(/[!*?↣↳→↓»↴]/g, "")
+  				.trim()
+  		);
 
-      if (el.querySelectorAll('img').length) ; else if (el.getAttribute('href') && !linkTextTrimmed) {
-        // Flag empty hyperlinks.
-        if (el && hasTitle) ; else if (el.children.length) {
-          // Has child elements (e.g. SVG or SPAN) <a><i></i></a>
-          setError(errorCount+1);
-          el.classList.add('sa11y-error-border');
-          el.insertAdjacentHTML('afterend', IssueGenerator(ERROR, Lang._('LINK_EMPTY_LINK_NO_LABEL'), true));
-        } else {
-          // Completely empty <a></a>
-          setError(errorCount+1);
-          el.classList.add('sa11y-error-border');
-          el.insertAdjacentHTML('afterend', IssueGenerator(ERROR, Lang._('LINK_EMPTY'), true));
-        }
-      } else if (error[0] != null) {
-        // Contains stop words.
-        if (hasAriaLabelledBy || hasAriaLabel || childAriaLabelledBy || childAriaLabel) {
-          {
-            el.insertAdjacentHTML(
-              'beforebegin',
-              IssueGenerator(GOOD, Lang.sprintf('LINK_LABEL', linkText), true),
-            );
-          }
-        } else if (el.getAttribute('aria-hidden') === 'true' && el.getAttribute('tabindex') === '-1') ; else {
-          el.classList.add('sa11y-error-text');
-          setError(errorCount+1);
-          el.insertAdjacentHTML(
-            'afterend',
-            IssueGenerator(ERROR, Lang.sprintf('LINK_STOPWORD', error[0]), true),
-          );
-        }
-      } else if (error[1] != null) {
-        // Contains warning words.
-        el.classList.add('sa11y-warning-text');
-        setWarning(warningCount+1);
-        el.insertAdjacentHTML(
-          'afterend',
-          IssueGenerator(WARNING, Lang.sprintf('LINK_BEST_PRACTICES', error[1]), true),
-        );
-      } else if (error[2] != null) {
-        // Contains URL in link text.
-        if (linkText.length > 40) {
-          el.classList.add('sa11y-warning-text');
-          setWarning(warningCount+1);
-          el.insertAdjacentHTML('afterend', IssueGenerator(WARNING, Lang._('LINK_URL'), true));
-        }
-      } else if (hasAriaLabelledBy || hasAriaLabel || childAriaLabelledBy || childAriaLabel) {
-        // If the link has any ARIA, append a "Good" link button.
-        {
-          el.insertAdjacentHTML(
-            'beforebegin',
-            IssueGenerator(GOOD, Lang.sprintf('LINK_LABEL', linkText), true),
-          );
-        }
-      }
-    });
+  		if (el.querySelectorAll("img").length) ; else if (el.getAttribute("href") && !linkTextTrimmed) {
+  			// Flag empty hyperlinks.
+  			if (el && hasTitle) ; else if (el.children.length) {
+  				// Has child elements (e.g. SVG or SPAN) <a><i></i></a>
+  				el.classList.add("sa11y-error-border");
+  				el.insertAdjacentHTML(
+  					"afterend",
+  					annotate(ERROR, Lang._("LINK_EMPTY_LINK_NO_LABEL"), true)
+  				);
+  			} else {
+  				// Completely empty <a></a>
+  				el.classList.add("sa11y-error-border");
+  				el.insertAdjacentHTML(
+  					"afterend",
+  					annotate(ERROR, Lang._("LINK_EMPTY"), true)
+  				);
+  			}
+  		} else if (error[0] != null) {
+  			// Contains stop words.
+  			if (
+  				hasAriaLabelledBy ||
+  				hasAriaLabel ||
+  				childAriaLabelledBy ||
+  				childAriaLabel
+  			) {
+  				{
+  					el.insertAdjacentHTML(
+  						"beforebegin",
+  						annotate(GOOD, Lang.sprintf("LINK_LABEL", linkText), true)
+  					);
+  				}
+  			} else if (
+  				el.getAttribute("aria-hidden") === "true" &&
+  				el.getAttribute("tabindex") === "-1"
+  			) ; else {
+  				el.classList.add("sa11y-error-text");
+  				el.insertAdjacentHTML(
+  					"afterend",
+  					annotate(ERROR, Lang.sprintf("LINK_STOPWORD", error[0]), true)
+  				);
+  			}
+  		} else if (error[1] != null) {
+  			// Contains warning words.
+  			el.classList.add("sa11y-warning-text");
+  			el.insertAdjacentHTML(
+  				"afterend",
+  				annotate(
+  					WARNING,
+  					Lang.sprintf("LINK_BEST_PRACTICES", error[1]),
+  					true
+  				)
+  			);
+  		} else if (error[2] != null) {
+  			// Contains URL in link text.
+  			if (linkText.length > 40) {
+  				el.classList.add("sa11y-warning-text");
+  				el.insertAdjacentHTML(
+  					"afterend",
+  					annotate(WARNING, Lang._("LINK_URL"), true)
+  				);
+  			}
+  		} else if (
+  			hasAriaLabelledBy ||
+  			hasAriaLabel ||
+  			childAriaLabelledBy ||
+  			childAriaLabel
+  		) {
+  			// If the link has any ARIA, append a "Good" link button.
+  			{
+  				el.insertAdjacentHTML(
+  					"beforebegin",
+  					annotate(GOOD, Lang.sprintf("LINK_LABEL", linkText), true)
+  				);
+  			}
+  		}
+  	});
   }
 
-  function checkAltText( images ) {
+  function checkAltText($img) {
   	let containsAltTextStopWords = (alt) => {
   		const altUrl = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".tiff", ".svg"];
 
@@ -5545,7 +5644,7 @@
   		return hit;
   	};
 
-  	images.forEach(function ($el, i) {
+  	$img.forEach(($el) => {
   		const alt = $el.getAttribute("alt");
   		if (alt === null) {
   			if ($el.closest("a[href]")) {
@@ -5553,13 +5652,12 @@
   					fnIgnore($el.closest("a[href]"), "noscript").textContent.trim()
   						.length >= 1
   				) {
-  					setError(errorCount+1);
   					$el.classList.add("sa11y-error-border");
   					$el
   						.closest("a[href]")
   						.insertAdjacentHTML(
   							"beforebegin",
-  							IssueGenerator(
+  							annotate(
   								ERROR,
   								Lang._("MISSING_ALT_LINK_BUT_HAS_TEXT_MESSAGE")
   							)
@@ -5569,21 +5667,19 @@
   						.length === 0
   				) {
   					$el.classList.add("sa11y-error-border");
-  					setError(errorCount+1);
   					$el
   						.closest("a[href]")
   						.insertAdjacentHTML(
   							"beforebegin",
-  							IssueGenerator(ERROR, Lang._("MISSING_ALT_LINK_MESSAGE"))
+  							annotate(ERROR, Lang._("MISSING_ALT_LINK_MESSAGE"))
   						);
   				}
   			} else {
   				// General failure message if image is missing alt.
   				$el.classList.add("sa11y-error-border");
-  				setError(errorCount+1);
   				$el.insertAdjacentHTML(
   					"beforebegin",
-  					IssueGenerator(ERROR, Lang._("MISSING_ALT_MESSAGE"))
+  					annotate(ERROR, Lang._("MISSING_ALT_MESSAGE"))
   				);
   			}
   		} else {
@@ -5594,65 +5690,58 @@
 
   			// Image fails if a stop word was found.
   			if (error[0] !== null && $el.closest("a[href]")) {
-  				
   				$el.classList.add("sa11y-error-border");
-  				setError(errorCount+1);
   				$el
   					.closest("a[href]")
   					.insertAdjacentHTML(
   						"beforebegin",
-  						IssueGenerator(
+  						annotate(
   							ERROR,
   							Lang.sprintf("LINK_IMAGE_BAD_ALT_MESSAGE", error[0], altText)
   						)
   					);
   			} else if (error[2] !== null && $el.closest("a[href]")) {
   				$el.classList.add("sa11y-error-border");
-  				setError(errorCount+1);
   				$el
   					.closest("a[href]")
   					.insertAdjacentHTML(
   						"beforebegin",
-  						IssueGenerator(
+  						annotate(
   							ERROR,
   							Lang.sprintf("LINK_IMAGE_PLACEHOLDER_ALT_MESSAGE", altText)
   						)
   					);
   			} else if (error[1] !== null && $el.closest("a[href]")) {
   				$el.classList.add("sa11y-warning-border");
-  				setWarning(warningCount+1);
   				$el
   					.closest("a[href]")
   					.insertAdjacentHTML(
   						"beforebegin",
-  						IssueGenerator(
+  						annotate(
   							WARNING,
   							Lang.sprintf("LINK_IMAGE_SUS_ALT_MESSAGE", error[1], altText)
   						)
   					);
   			} else if (error[0] !== null) {
   				$el.classList.add("sa11y-error-border");
-  				setError(errorCount+1);
   				$el.insertAdjacentHTML(
   					"beforebegin",
-  					IssueGenerator(
+  					annotate(
   						ERROR,
   						Lang.sprintf("LINK_ALT_HAS_BAD_WORD_MESSAGE", altText, error[0])
   					)
   				);
   			} else if (error[2] !== null) {
   				$el.classList.add("sa11y-error-border");
-  				setError(errorCount+1);
   				$el.insertAdjacentHTML(
   					"beforebegin",
-  					IssueGenerator(ERROR, Lang.sprintf("ALT_PLACEHOLDER_MESSAGE", altText))
+  					annotate(ERROR, Lang.sprintf("ALT_PLACEHOLDER_MESSAGE", altText))
   				);
   			} else if (error[1] !== null) {
   				$el.classList.add("sa11y-warning-border");
-  				setWarning(warningCount+1);
   				$el.insertAdjacentHTML(
   					"beforebegin",
-  					IssueGenerator(
+  					annotate(
   						WARNING,
   						Lang.sprintf("ALT_HAS_SUS_WORD", error[1], altText)
   					)
@@ -5665,42 +5754,39 @@
   					$el.closest("a[href]").getAttribute("aria-hidden") === "true"
   				) {
   					$el.classList.add("sa11y-error-border");
-  					setError(errorCount+1);
   					$el
   						.closest("a[href]")
   						.insertAdjacentHTML(
   							"beforebegin",
-  							IssueGenerator(ERROR, Lang._("LINK_IMAGE_ARIA_HIDDEN"))
+  							annotate(ERROR, Lang._("LINK_IMAGE_ARIA_HIDDEN"))
   						);
   				} else if (
   					fnIgnore($el.closest("a[href]"), "noscript").textContent.trim()
   						.length === 0
   				) {
   					$el.classList.add("sa11y-error-border");
-  					setError(errorCount+1);
   					$el
   						.closest("a[href]")
   						.insertAdjacentHTML(
   							"beforebegin",
-  							IssueGenerator(ERROR, Lang._("LINK_IMAGE_NO_ALT_TEXT"))
+  							annotate(ERROR, Lang._("LINK_IMAGE_NO_ALT_TEXT"))
   						);
   				} else {
   					$el
   						.closest("a[href]")
   						.insertAdjacentHTML(
   							"beforebegin",
-  							IssueGenerator(GOOD, Lang._("LINK_IMAGE_HAS_TEXT"))
+  							annotate(GOOD, Lang._("LINK_IMAGE_HAS_TEXT"))
   						);
   				}
   			} else if (alt.length > 250 && $el.closest("a[href]")) {
   				// Link and contains alt text.
   				$el.classList.add("sa11y-warning-border");
-  				setWarning(warningCount+1);
   				$el
   					.closest("a[href]")
   					.insertAdjacentHTML(
   						"beforebegin",
-  						IssueGenerator(
+  						annotate(
   							WARNING,
   							Lang.sprintf("LINK_IMAGE_LONG_ALT", altLength, altText)
   						)
@@ -5713,12 +5799,11 @@
   			) {
   				// Link and contains an alt text.
   				$el.classList.add("sa11y-warning-border");
-  				setWarning(warningCount+1);
   				$el
   					.closest("a[href]")
   					.insertAdjacentHTML(
   						"beforebegin",
-  						IssueGenerator(
+  						annotate(
   							WARNING,
   							Lang.sprintf("LINK_IMAGE_ALT_WARNING", altText)
   						)
@@ -5731,12 +5816,11 @@
   			) {
   				// Contains alt text & surrounding link text.
   				$el.classList.add("sa11y-warning-border");
-  				setWarning(warningCount+1);
   				$el
   					.closest("a[href]")
   					.insertAdjacentHTML(
   						"beforebegin",
-  						IssueGenerator(
+  						annotate(
   							WARNING,
   							Lang.sprintf("LINK_IMAGE_ALT_AND_TEXT_WARNING", altText)
   						)
@@ -5750,26 +5834,23 @@
   						figcaption.textContent.trim().length >= 1
   					) {
   						$el.classList.add("sa11y-warning-border");
-  						setWarning(warningCount+1);
   						$el.insertAdjacentHTML(
   							"beforebegin",
-  							IssueGenerator(WARNING, Lang._("IMAGE_FIGURE_DECORATIVE"))
+  							annotate(WARNING, Lang._("IMAGE_FIGURE_DECORATIVE"))
   						);
   					}
   				} else {
   					$el.classList.add("sa11y-warning-border");
-  					setWarning(warningCount+1);
   					$el.insertAdjacentHTML(
   						"beforebegin",
-  						IssueGenerator(WARNING, Lang._("IMAGE_DECORATIVE"))
+  						annotate(WARNING, Lang._("IMAGE_DECORATIVE"))
   					);
   				}
   			} else if (alt.length > 250) {
   				$el.classList.add("sa11y-warning-border");
-  				setWarning(warningCount+1);
   				$el.insertAdjacentHTML(
   					"beforebegin",
-  					IssueGenerator(
+  					annotate(
   						WARNING,
   						Lang.sprintf("IMAGE_ALT_TOO_LONG", altLength, altText)
   					)
@@ -5784,10 +5865,9 @@
   							altText.trim().toLowerCase()
   					) {
   						$el.classList.add("sa11y-warning-border");
-  						setWarning(warningCount+1);
   						$el.insertAdjacentHTML(
   							"beforebegin",
-  							IssueGenerator(
+  							annotate(
   								WARNING,
   								Lang.sprintf("IMAGE_FIGURE_DUPLICATE_ALT", altText)
   							)
@@ -5795,14 +5875,14 @@
   					} else {
   						$el.insertAdjacentHTML(
   							"beforebegin",
-  							IssueGenerator(GOOD, Lang.sprintf("IMAGE_PASS", altText))
+  							annotate(GOOD, Lang.sprintf("IMAGE_PASS", altText))
   						);
   					}
   				} else {
   					// If image has alt text - pass!
   					$el.insertAdjacentHTML(
   						"beforebegin",
-  						IssueGenerator(GOOD, Lang.sprintf("IMAGE_PASS", altText))
+  						annotate(GOOD, Lang.sprintf("IMAGE_PASS", altText))
   					);
   				}
   			}
@@ -5991,16 +6071,14 @@
 
   		const nodetext = fnIgnore(clone, "script").textContent;
   		if (name.tagName === "INPUT") {
-  			setError(errorCount + 1);
   			name.insertAdjacentHTML(
   				"beforebegin",
-  				IssueGenerator(ERROR, Lang.sprintf("CONTRAST_INPUT_ERROR", cratio))
+  				annotate(ERROR, Lang.sprintf("CONTRAST_INPUT_ERROR", cratio))
   			);
   		} else {
-  			setError(errorCount + 1);
   			name.insertAdjacentHTML(
   				"beforebegin",
-  				IssueGenerator(ERROR, Lang.sprintf("CONTRAST_ERROR", cratio, nodetext))
+  				annotate(ERROR, Lang.sprintf("CONTRAST_ERROR", cratio, nodetext))
   			);
   		}
   	});
@@ -6015,18 +6093,17 @@
   			clone.removeChild(removeSa11yHeadingLabel[i]);
   		}
   		const nodetext = fnIgnore(clone, "script").textContent;
-  		setWarning(warningCount + 1);
   		name.insertAdjacentHTML(
   			"beforebegin",
-  			IssueGenerator(WARNING, Lang.sprintf("CONTRAST_WARNING", nodetext))
+  			annotate(WARNING, Lang.sprintf("CONTRAST_WARNING", nodetext))
   		);
   	});
   }
 
   document.getElementsByTagName("html")[0].getAttribute("lang");
-  function checkReadability({ readability }, elemToIgnore) {
+  function checkReadability( $readability ) {
   	//Crude hack to add a period to the end of list items to make a complete sentence.
-  	readability.forEach(($el) => {
+  	$readability.forEach(($el) => {
   		const listText = $el.textContent;
   		if (listText.length >= 120) {
   			if (listText.charAt(listText.length - 1) !== ".") {
@@ -6058,8 +6135,8 @@
   	};
 
   	const readabilityarray = [];
-  	for (let i = 0; i < readability.length; i++) {
-  		const current = readability[i];
+  	for (let i = 0; i < $readability.length; i++) {
+  		const current = $readability[i];
   		if (current.textContent.replace(/ |\n/g, "") !== "") {
   			readabilityarray.push(current.textContent);
   		}
@@ -6159,6 +6236,707 @@
   	}
   }
 
+  function checkEmbeddedContent($audio, $videos, $dataviz, $twitter, $iframes, $embeddedContent) {
+  	// Warning: Audio content.
+  	{
+  		$audio.forEach(($el) => {
+  			$el.classList.add("sa11y-warning-border");
+  			$el.insertAdjacentHTML(
+  				"beforebegin",
+  				annotate(WARNING, Lang._("EMBED_AUDIO"))
+  			);
+  		});
+  	}
+
+  	// Warning: Video content.
+  	{
+  		$videos.forEach(($el) => {
+  			const track = $el.getElementsByTagName("TRACK");
+  			if ($el.tagName === "VIDEO" && track.length) ; else {
+  				$el.classList.add("sa11y-warning-border");
+  				$el.insertAdjacentHTML(
+  					"beforebegin",
+  					annotate(WARNING, Lang._("EMBED_VIDEO"))
+  				);
+  			}
+  		});
+  	}
+
+  	// Warning: Data visualizations.
+  	{
+  		$dataviz.forEach(($el) => {
+  			$el.classList.add("sa11y-warning-border");
+  			$el.insertAdjacentHTML(
+  				"beforebegin",
+  				annotate(WARNING, Lang._("EMBED_DATA_VIZ"))
+  			);
+  		});
+  	}
+
+  	// Warning: Twitter timelines that are too long.
+  	{
+  		$twitter.forEach(($el) => {
+  			const tweets = $el.contentWindow.document.body.querySelectorAll(
+  				".timeline-TweetList-tweet"
+  			);
+  			if (tweets.length > 3) {
+  				$el.classList.add("sa11y-warning-border");
+  				$el.insertAdjacentHTML(
+  					"beforebegin",
+  					annotate(WARNING, Lang._("EMBED_TWITTER"))
+  				);
+  			}
+  		});
+  	}
+
+  	// Error: iFrame is missing accessible name.
+  	{
+  		$iframes.forEach(($el) => {
+  			if (
+  				$el.tagName === "VIDEO" ||
+  				$el.tagName === "AUDIO" ||
+  				$el.getAttribute("aria-hidden") === "true" ||
+  				$el.getAttribute("hidden") !== null ||
+  				$el.style.display === "none" ||
+  				$el.getAttribute("role") === "presentation"
+  			) ; else if (
+  				$el.getAttribute("title") === null ||
+  				$el.getAttribute("title") === ""
+  			) {
+  				if (
+  					$el.getAttribute("aria-label") === null ||
+  					$el.getAttribute("aria-label") === ""
+  				) {
+  					if ($el.getAttribute("aria-labelledby") === null) {
+  						// Make sure red error border takes precedence
+  						if ($el.classList.contains("sa11y-warning-border")) {
+  							$el.classList.remove("sa11y-warning-border");
+  						}
+  						$el.classList.add("sa11y-error-border");
+  						$el.insertAdjacentHTML(
+  							"beforebegin",
+  							annotate(ERROR, Lang._("EMBED_MISSING_TITLE"))
+  						);
+  					}
+  				}
+  			} else ;
+  		});
+  	}
+
+  	// Warning: general warning for iFrames
+  	{
+  		$embeddedContent.forEach(($el) => {
+  			if (
+  				$el.tagName === "VIDEO" ||
+  				$el.tagName === "AUDIO" ||
+  				$el.getAttribute("aria-hidden") === "true" ||
+  				$el.getAttribute("hidden") !== null ||
+  				$el.style.display === "none" ||
+  				$el.getAttribute("role") === "presentation" ||
+  				$el.getAttribute("tabindex") === "-1"
+  			) ; else {
+  				$el.classList.add("sa11y-warning-border");
+  				$el.insertAdjacentHTML(
+  					"beforebegin",
+  					annotate(WARNING, Lang._("EMBED_GENERAL_WARNING"))
+  				);
+  			}
+  		});
+  	}
+  }
+
+  function checkLinksAdvanced($links) {
+  	const seen = {};
+  	$links.forEach((el) => {
+  		let linkText = computeAriaLabel(el);
+  		const $img = el.querySelector("img");
+
+  		if (linkText === "noAria") {
+  			// Plain text content.
+  			linkText = el.textContent.trim();
+
+  			// If an image exists within the link.
+  			if ($img) {
+  				// Check if there's aria on the image.
+  				const imgText = computeAriaLabel($img);
+  				if (imgText !== "noAria") {
+  					linkText += imgText;
+  				} else {
+  					// No aria? Process alt on image.
+  					linkText += $img ? $img.getAttribute("alt") || "" : "";
+  				}
+  			}
+  		}
+
+  		// Remove whitespace, special characters, etc.
+  		const linkTextTrimmed = linkText
+  			.replace(/'|"|-|\.|\s+/g, "")
+  			.trim()
+  			.toLowerCase();
+
+  		// Links with identical accessible names have equivalent purpose.
+  		const href = el.getAttribute("href");
+
+  		if (linkText.length !== 0) {
+  			if (seen[linkTextTrimmed] && linkTextTrimmed.length !== 0) {
+  				if (seen[href]) ; else {
+  					el.classList.add("sa11y-warning-text");
+  					el.insertAdjacentHTML(
+  						"afterend",
+  						annotate(
+  							WARNING,
+  							Lang.sprintf("LINK_IDENTICAL_NAME", linkText),
+  							true
+  						)
+  					);
+  				}
+  			} else {
+  				seen[linkTextTrimmed] = true;
+  				seen[href] = true;
+  			}
+  		}
+
+  		// New tab or new window.
+  		const containsNewWindowPhrases = Lang._("NEW_WINDOW_PHRASES").some(
+  			(pass) => {
+  				if (linkText.trim().length === 0 && !!el.getAttribute("title")) {
+  					linkText = el.getAttribute("title");
+  				}
+  				return linkText.toLowerCase().indexOf(pass) >= 0;
+  			}
+  		);
+
+  		// Link that points to a file type indicates that it does.
+  		const containsFileTypePhrases = Lang._("FILE_TYPE_PHRASES").some(
+  			(pass) => linkText.toLowerCase().indexOf(pass) >= 0
+  		);
+
+  		const fileTypeMatch = el.matches(`
+        a[href$='.pdf'],
+        a[href$='.doc'],
+        a[href$='.docx'],
+        a[href$='.zip'],
+        a[href$='.mp3'],
+        a[href$='.txt'],
+        a[href$='.exe'],
+        a[href$='.dmg'],
+        a[href$='.rtf'],
+        a[href$='.pptx'],
+        a[href$='.ppt'],
+        a[href$='.xls'],
+        a[href$='.xlsx'],
+        a[href$='.csv'],
+        a[href$='.mp4'],
+        a[href$='.mov'],
+        a[href$='.avi']
+      `);
+
+  		if (
+  			el.getAttribute("target") === "_blank" &&
+  			!fileTypeMatch &&
+  			!containsNewWindowPhrases
+  		) {
+  			el.classList.add("sa11y-warning-text");
+  			el.insertAdjacentHTML(
+  				"afterend",
+  				annotate(WARNING, Lang._("NEW_TAB_WARNING"), true)
+  			);
+  		}
+
+  		if (fileTypeMatch && !containsFileTypePhrases) {
+  			el.classList.add("sa11y-warning-text");
+  			el.insertAdjacentHTML(
+  				"beforebegin",
+  				annotate(WARNING, Lang._("FILE_TYPE_WARNING"), true)
+  			);
+  		}
+  	});
+  }
+
+  function checkLabels($inputs, root) {
+  	$inputs.forEach((el) => {
+  		let ariaLabel = computeAriaLabel(el);
+  		const type = el.getAttribute("type");
+  		const tabindex = el.getAttribute("tabindex");
+
+  		// If button type is submit or button: pass
+  		if (
+  			type === "submit" ||
+  			type === "button" ||
+  			type === "hidden" ||
+  			tabindex === "-1"
+  		) ; else if (type === "image") {
+  			// Inputs where type="image".
+  			const imgalt = el.getAttribute("alt");
+  			if (!imgalt || imgalt === " ") {
+  				if (el.getAttribute("aria-label")) ; else {
+  					el.classList.add("sa11y-error-border");
+  					el.insertAdjacentHTML(
+  						"afterend",
+  						annotate(
+  							ERROR,
+  							Lang._("LABELS_MISSING_IMAGE_INPUT_MESSAGE"),
+  							true
+  						)
+  					);
+  				}
+  			}
+  		} else if (type === "reset") {
+  			// Recommendation to remove reset buttons.
+  			el.classList.add("sa11y-warning-border");
+  			el.insertAdjacentHTML(
+  				"afterend",
+  				annotate(WARNING, Lang._("LABELS_INPUT_RESET_MESSAGE"), true)
+  			);
+  		} else if (
+  			el.getAttribute("aria-label") ||
+  			el.getAttribute("aria-labelledby") ||
+  			el.getAttribute("title")
+  		) {
+  			// Uses ARIA. Warn them to ensure there's a visible label.
+  			if (el.getAttribute("title")) {
+  				ariaLabel = el.getAttribute("title");
+  				el.classList.add("sa11y-warning-border");
+  				el.insertAdjacentHTML(
+  					"afterend",
+  					annotate(
+  						WARNING,
+  						Lang.sprintf("LABELS_ARIA_LABEL_INPUT_MESSAGE", ariaLabel),
+  						true
+  					)
+  				);
+  			} else {
+  				el.classList.add("sa11y-warning-border");
+  				el.insertAdjacentHTML(
+  					"afterend",
+  					annotate(
+  						WARNING,
+  						Lang.sprintf("LABELS_ARIA_LABEL_INPUT_MESSAGE", ariaLabel),
+  						true
+  					)
+  				);
+  			}
+  		} else if (el.closest("label") && el.closest("label").textContent.trim()) ; else if (el.getAttribute("id")) {
+  			// Has an ID but doesn't have a matching FOR attribute.
+  			const $labels = root.querySelectorAll("label");
+  			let hasFor = false;
+
+  			$labels.forEach(($l) => {
+  				if (hasFor) return;
+  				if ($l.getAttribute("for") === el.getAttribute("id")) {
+  					hasFor = true;
+  				}
+  			});
+
+  			if (!hasFor) {
+  				el.classList.add("sa11y-error-border");
+  				const id = el.getAttribute("id");
+  				el.insertAdjacentHTML(
+  					"afterend",
+  					annotate(
+  						ERROR,
+  						Lang.sprintf("LABELS_NO_FOR_ATTRIBUTE_MESSAGE", id),
+  						true
+  					)
+  				);
+  			}
+  		} else {
+  			el.classList.add("sa11y-error-border");
+  			el.insertAdjacentHTML(
+  				"afterend",
+  				annotate(ERROR, Lang._("LABELS_MISSING_LABEL_MESSAGE"), true)
+  			);
+  		}
+  	});
+  }
+
+  function checkQA(
+      root,
+  	$strongitalics,
+  	$badDevLinks,
+  	$checkPDF,
+  	$tables,
+  	$blockquotes,
+  	$p,
+  	$allCaps,
+  	$lang,
+  ) {
+  	// Error: Find all links pointing to development environment.
+  	{
+  		$badDevLinks.forEach(($el) => {
+  			$el.classList.add("sa11y-error-text");
+  			$el.insertAdjacentHTML(
+  				"afterend",
+  				annotate(ERROR, Lang.sprintf("QA_BAD_LINK", $el), true)
+  			);
+  		});
+  	}
+
+  	// Warning: Excessive bolding or italics.
+  	{
+  		$strongitalics.forEach(($el) => {
+  			const strongItalicsText = $el.textContent.trim().length;
+  			if (strongItalicsText > 400) {
+  				$el.insertAdjacentHTML(
+  					"beforebegin",
+  					annotate(WARNING, Lang._("QA_BAD_ITALICS"))
+  				);
+  			}
+  		});
+  	}
+
+  	// Warning: Find all PDFs.
+  	{
+  		$checkPDF.forEach(($el, i) => {
+  			const pdfCount = $checkPDF.length;
+
+  			// Highlight all PDFs.
+  			if (pdfCount > 0) {
+  				$el.classList.add("sa11y-warning-text");
+  			}
+  			// Only append warning button to first PDF.
+  			if ($el && i === 0) {
+  				$el.insertAdjacentHTML(
+  					"afterend",
+  					annotate(WARNING, Lang.sprintf("QA_PDF", pdfCount), true)
+  				);
+  				if ($el.querySelector("img")) {
+  					$el.classList.remove("sa11y-warning-text");
+  				}
+  			}
+  		});
+  	}
+
+  	// Error: Missing language tag. Lang should be at least 2 characters.
+  	{
+  		if (!$lang || $lang.length < 2) {
+  			document
+  				.getElementById("sa11y-container")
+  				.insertAdjacentHTML(
+  					"afterend",
+  					annotateBanner(ERROR, Lang._("QA_PAGE_LANGUAGE"))
+  				);
+  		}
+  	}
+
+  	// Warning: Find blockquotes used as headers.
+  	{
+  		$blockquotes.forEach(($el) => {
+  			const bqHeadingText = $el.textContent;
+  			if (bqHeadingText.trim().length < 25) {
+  				$el.classList.add("sa11y-warning-border");
+  				$el.insertAdjacentHTML(
+  					"beforebegin",
+  					annotate(
+  						WARNING,
+  						Lang.sprintf("QA_BLOCKQUOTE_MESSAGE", bqHeadingText)
+  					)
+  				);
+  			}
+  		});
+  	}
+
+  	// Tables check.
+  	{
+  		$tables.forEach(($el) => {
+  			const findTHeaders = $el.querySelectorAll("th");
+  			const findHeadingTags = $el.querySelectorAll("h1, h2, h3, h4, h5, h6");
+  			if (findTHeaders.length === 0) {
+  				$el.classList.add("sa11y-error-border");
+  				$el.insertAdjacentHTML(
+  					"beforebegin",
+  					annotate(ERROR, Lang._("TABLES_MISSING_HEADINGS"))
+  				);
+  			}
+  			if (findHeadingTags.length > 0) {
+  				findHeadingTags.forEach(($a) => {
+  					$a.classList.add("sa11y-error-border");
+  					$a.insertAdjacentHTML(
+  						"beforebegin",
+  						annotate(ERROR, Lang._("TABLES_SEMANTIC_HEADING"))
+  					);
+  				});
+  			}
+  			findTHeaders.forEach(($b) => {
+  				if ($b.textContent.trim().length === 0) {
+  					$b.classList.add("sa11y-error-border");
+  					$b.innerHTML = annotate(ERROR, Lang._("TABLES_EMPTY_HEADING"));
+  				}
+  			});
+  		});
+  	}
+
+  	// Warning: Detect fake headings.
+  	{
+  		$p.forEach(($el) => {
+  			const brAfter = $el.innerHTML.indexOf("</strong><br>");
+  			const brBefore = $el.innerHTML.indexOf("<br></strong>");
+  			let boldtext;
+
+  			// Check paragraphs greater than x characters.
+  			if ($el && $el.textContent.trim().length >= 300) {
+  				const { firstChild } = $el;
+
+  				// If paragraph starts with <strong> tag and ends with <br>.
+  				if (
+  					firstChild.tagName === "STRONG" &&
+  					(brBefore !== -1 || brAfter !== -1)
+  				) {
+  					boldtext = firstChild.textContent;
+
+  					if (
+  						!/[*]$/.test(boldtext) &&
+  						!$el.closest("table") &&
+  						boldtext.length <= 120
+  					) {
+  						firstChild.classList.add(
+  							"sa11y-fake-heading",
+  							"sa11y-warning-border"
+  						);
+  						$el.insertAdjacentHTML(
+  							"beforebegin",
+  							annotate(
+  								WARNING,
+  								Lang.sprintf("QA_FAKE_HEADING", boldtext),
+  								true
+  							)
+  						);
+  					}
+  				}
+  			}
+
+  			// If paragraph only contains <p><strong>...</strong></p>.
+  			if (/^<(strong)>.+<\/\1>$/.test($el.innerHTML.trim())) {
+  				// Although only flag if it:
+  				// 1) Has less than 120 characters (typical heading length).
+  				// 2) The previous element is not a heading.
+  				const prevElement = $el.previousElementSibling;
+  				let tagName = "";
+  				boldtext = $el.textContent;
+
+  				if (prevElement !== null) {
+  					tagName = prevElement.tagName;
+  				}
+
+  				if (
+  					!/[*]$/.test(boldtext) &&
+  					!$el.closest("table") &&
+  					boldtext.length <= 120 &&
+  					tagName.charAt(0) !== "H"
+  				) {
+  					$el.classList.add("sa11y-fake-heading", "sa11y-warning-border");
+  					$el.insertAdjacentHTML(
+  						"beforebegin",
+  						annotate(
+  							WARNING,
+  							Lang.sprintf("QA_FAKE_HEADING", boldtext),
+  							true
+  						)
+  					);
+  				}
+  			}
+  		});
+  	}
+
+  	// Warning: Detect paragraphs that should be lists.
+  	// Thanks to John Jameson from PrincetonU for this ruleset!
+  	{
+  		$p.forEach(($el) => {
+  			let activeMatch = "";
+  			const prefixDecrement = {
+  				b: "a",
+  				B: "A",
+  				2: "1",
+  				б: "а",
+  				Б: "А",
+  			};
+  			const prefixMatch =
+  				/a\.|a\)|A\.|A\)|а\.|а\)|А\.|А\)|1\.|1\)|\*\s|-\s|--|•\s|→\s|✓\s|✔\s|✗\s|✖\s|✘\s|❯\s|›\s|»\s/;
+  			const decrement = (el) =>
+  				el.replace(/^b|^B|^б|^Б|^2/, (match) => prefixDecrement[match]);
+  			let hit = false;
+  			const firstPrefix = $el.textContent.substring(0, 2);
+  			if (
+  				firstPrefix.trim().length > 0 &&
+  				firstPrefix !== activeMatch &&
+  				firstPrefix.match(prefixMatch)
+  			) {
+  				const hasBreak = $el.innerHTML.indexOf("<br>");
+  				if (hasBreak !== -1) {
+  					const subParagraph = $el.innerHTML.substring(hasBreak + 4).trim();
+  					const subPrefix = subParagraph.substring(0, 2);
+  					if (firstPrefix === decrement(subPrefix)) {
+  						hit = true;
+  					}
+  				}
+
+  				const getNextSibling = (elem, selector) => {
+  					let sibling = elem.nextElementSibling;
+  					if (!selector) return sibling;
+  					while (sibling) {
+  						if (sibling.matches(selector)) return sibling;
+  						sibling = sibling.nextElementSibling;
+  					}
+  					return "";
+  				};
+
+  				// Decrement the second p prefix and compare .
+  				if (!hit) {
+  					const $second = getNextSibling($el, "p");
+  					if ($second) {
+  						const secondPrefix = decrement(
+  							$el.nextElementSibling.textContent.substring(0, 2)
+  						);
+  						if (firstPrefix === secondPrefix) {
+  							hit = true;
+  						}
+  					}
+  				}
+  				if (hit) {
+  					$el.insertAdjacentHTML(
+  						"beforebegin",
+  						annotate(
+  							WARNING,
+  							Lang.sprintf("QA_SHOULD_BE_LIST", firstPrefix)
+  						)
+  					);
+  					$el.classList.add("sa11y-fake-list");
+  					activeMatch = firstPrefix;
+  				} else {
+  					activeMatch = "";
+  				}
+  			} else {
+  				activeMatch = "";
+  			}
+  		});
+  	}
+
+  	// Warning: Detect uppercase.
+  	{
+  		$allCaps.forEach((element) => {
+  			const $el = element;
+  			const uppercasePattern =
+  				/(?!<a[^>]*?>)(\b[A-Z][',!:A-Z\s]{15,}|\b[A-Z]{15,}\b)(?![^<]*?<\/a>)/g;
+  			const html = $el.innerHTML;
+  			$el.innerHTML = html.replace(
+  				uppercasePattern,
+  				"<span class='sa11y-warning-uppercase'>$1</span>"
+  			);
+  		});
+
+  		const $warningUppercase = root.querySelectorAll(
+  			".sa11y-warning-uppercase"
+  		);
+  		$warningUppercase.forEach(($el) => {
+  			$el.insertAdjacentHTML(
+  				"afterend",
+  				annotate(WARNING, Lang._("QA_UPPERCASE_WARNING"), true)
+  			);
+  		});
+  	}
+
+  	// Error: Duplicate IDs
+  	{
+  		const ids = root.querySelectorAll("[id]");
+  		const allIds = {};
+  		ids.forEach(($el) => {
+  			const { id } = $el;
+  			if (id) {
+  				if (allIds[id] === undefined) {
+  					allIds[id] = 1;
+  				} else {
+  					$el.classList.add("sa11y-error-border");
+  					$el.insertAdjacentHTML(
+  						"afterend",
+  						annotate(ERROR, Lang.sprintf("QA_DUPLICATE_ID", id), true)
+  					);
+  				}
+  			}
+  		});
+  	}
+
+  	// Warning: Flag underline text.
+  	{
+  		const underline = Array.from(root.querySelectorAll("u"));
+  		underline.forEach(($el) => {
+  			$el.classList.add("sa11y-warning-text");
+  			$el.insertAdjacentHTML(
+  				"beforebegin",
+  				annotate(WARNING, Lang._("QA_TEXT_UNDERLINE_WARNING"), true)
+  			);
+  		});
+  		const computed = Array.from(
+  			root.querySelectorAll(
+  				"h1, h2, h3, h4, h5, h6, p, div, span, li, blockquote"
+  			)
+  		);
+  		computed.forEach(($el) => {
+  			const style = getComputedStyle($el);
+  			const decoration = style.textDecorationLine;
+  			if (decoration === "underline") {
+  				$el.classList.add("sa11y-warning-text");
+  				$el.insertAdjacentHTML(
+  					"beforebegin",
+  					annotate(WARNING, Lang._("QA_TEXT_UNDERLINE_WARNING"), true)
+  				);
+  			}
+  		});
+  	}
+
+  	// Error: Page is missing meta title.
+  	{
+  		const $title = document.querySelector("title");
+  		if (!$title || $title.textContent.trim().length === 0) {
+  			panel.insertAdjacentHTML(
+  				"afterend",
+  				annotateBanner(ERROR, Lang._("QA_PAGE_TITLE"))
+  			);
+  		}
+  	}
+  }
+
+  function customRules(root) {
+  	const C = {
+  		ANNOUNCEMENT_MESSAGE:
+  			"More than one Announcement component found! The Announcement component should be used strategically and sparingly. It should be used to get attention or indicate that something is important. Misuse of this component makes it less effective or impactful. Secondly, this component is semantically labeled as an Announcement for people who use screen readers.",
+
+  		ACCORDION_FORM_MESSAGE:
+  			"Do <strong>not nest forms</strong> within the Accordion component. If the form contains validation issues, a person may not see the form feedback since the accordion panel goes back to its original closed state.",
+  	};
+
+  	/* Example #1 */
+  	function $checkAnnouncement() {
+  		let announcements = document.querySelectorAll(".sa11y-announcement-component");
+  		if (announcements.length > 1) {
+  			for (let i = 1; i < announcements.length; i++) {
+  				announcements[i].classList.add("sa11y-warning-border");
+  				announcements[i].insertAdjacentHTML(
+  					"beforebegin",
+  					annotate(WARNING, C.ANNOUNCEMENT_MESSAGE)
+  				);
+  			}
+  		}
+  	}
+
+  	/* Example #2  */
+  	function $checkAccordions() {
+  		root.querySelectorAll(".sa11y-accordion-example").forEach(($el) => {
+  			const checkForm = $el.querySelector("form");
+  			if (!!checkForm && checkForm.length) {
+  				$el.classList.add("sa11y-error-border");
+  				$el.insertAdjacentHTML(
+  					"beforebegin",
+  					annotate(ERROR, C.ACCORDION_FORM_MESSAGE)
+  				);
+  			}
+  		});
+  	}
+
+  	//Call the functions
+  	$checkAnnouncement();
+  	$checkAccordions();
+  }
+
   function initializeTooltips() {
   	tippy(".sa11y-btn", {
   		interactive: true,
@@ -6181,26 +6959,26 @@
   	// Error handling. If specified selector doesn't exist on page.
   	const rootTarget = document.querySelector(option.checkRoot);
   	if (!rootTarget) {
-          // If target root can't be found, scan the body of page instead.
-          var root = document.querySelector("body");
+  		// If target root can't be found, scan the body of page instead.
+  		var root = document.querySelector("body");
 
-          // Send an alert to panel.
-          const $alertPanel = document.getElementById("sa11y-panel-alert");
-          const $alertText = document.getElementById("sa11y-panel-alert-text");
+  		// Send an alert to panel.
+  		const $alertPanel = document.getElementById("sa11y-panel-alert");
+  		const $alertText = document.getElementById("sa11y-panel-alert-text");
 
-          root = option.checkRoot;
-          $alertText.innerHTML = `${Lang.sprintf("ERROR_MISSING_ROOT_TARGET", root)}`;
-          $alertPanel.classList.add("sa11y-active");
-      } else {
-          var root = document.querySelector(option.checkRoot);
-      }
+  		root = option.checkRoot;
+  		$alertText.innerHTML = `${Lang.sprintf("ERROR_MISSING_ROOT_TARGET", root)}`;
+  		$alertPanel.classList.add("sa11y-active");
+  	} else {
+  		var root = document.querySelector(option.checkRoot);
+  	}
 
-  	let elem=findElements();
+  	let elem = findElements();
 
   	// Ruleset checks
-  	checkHeaders(elem["h"], elem["h1"]);
-  	checkLinkText(elem["link"]);
-  	checkAltText(elem["images"]);
+  	checkHeaders(elem["$h"], elem["$h1"]);
+  	checkLinkText(elem["$links"]);
+  	checkAltText(elem["$img"]);
 
   	// Contrast plugin
   	{
@@ -6209,47 +6987,56 @@
   		}
   	}
 
-  	// // Form labels plugin
-  	// if (option.formLabelsPlugin === true) {
-  	// 	if (localStorage.getItem("sa11y-remember-labels") === "On") {
-  	// 		// checkLabels();
-  	// 	}
-  	// } else {
-  	// 	const formLabelsLi = document.getElementById("sa11y-form-labels-li");
-  	// 	formLabelsLi.setAttribute("style", "display: none !important;");
-  	// 	localStorage.setItem("sa11y-remember-labels", "Off");
-  	// }
+  	// Form labels plugin
+  	{
+  		if (localStorage.getItem("sa11y-remember-labels") === "On") {
+  			checkLabels(elem["$inputs"], root);
+  		}
+  	}
 
-  	// // Links (Advanced) plugin
-  	// if (option.linksAdvancedPlugin === true) {
-  	// 	if (localStorage.getItem("sa11y-remember-links-advanced") === "On") {
-  	// 		// checkLinksAdvanced();
-  	// 	}
-  	// } else {
-  	// 	const linksAdvancedLi = document.getElementById("sa11y-links-advanced-li");
-  	// 	linksAdvancedLi.setAttribute("style", "display: none !important;");
-  	// 	localStorage.setItem("sa11y-remember-links-advanced", "Off");
-  	// }
+  	// Links (Advanced) plugin
+  	{
+  		if (localStorage.getItem("sa11y-remember-links-advanced") === "On") {
+  			checkLinksAdvanced(elem["$links"]);
+  		}
+  	}
 
   	// Readability plugin
   	{
   		if (localStorage.getItem("sa11y-remember-readability") === "On") {
-  			checkReadability(elem);
+  			checkReadability(elem["$readability"]);
   		}
   	}
 
-  	// // Embedded content plugin
-  	// if (option.embeddedContentAll === true) {
-  	// 	// checkEmbeddedContent();
-  	// }
+  	// Embedded content plugin
+  	{
+  		checkEmbeddedContent(
+  			elem["$audio"],
+  			elem["$videos"],
+  			elem["$dataviz"],
+  			elem["$twitter"],
+  			elem["$iframes"],
+  			elem["$embeddedContent"]
+  		);
+  	}
 
-  	// // QA module checks.
-  	// // checkQA();
+  	// QA module checks.
+  	checkQA(
+  		root,
+  		elem["$strongitalics"],
+  		elem["$badDevLinks"],
+  		elem["$checkPDF"],
+  		elem["$tables"],
+  		elem["$blockquotes"],
+  		elem["$p"],
+  		elem["$allCaps"],
+  		elem["$lang"]
+  	);
 
-  	// // Custom checks abstracted to seperate class.
-  	// if (option.customChecks && option.customChecks.setSa11y) {
-  	// 	option.customChecks.check();
-  	// }
+  	// Custom checks abstracted to seperate class.
+  	{
+  		customRules(root);
+  	}
 
   	// Update panel
   	if (panelActive) {

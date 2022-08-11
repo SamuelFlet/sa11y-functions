@@ -104,9 +104,42 @@ export default function () {
 		($el) => !$el.matches(option.embeddedContent)
 	);
 
-	//Blockquotes
+	// QA
+	const $findstrongitalics = Array.from(
+		container.querySelectorAll("strong, em")
+	);
+	let $strongitalics = $findstrongitalics.filter(
+		($el) => !containerExclusions.includes($el)
+	);
+
+	const $findbadDevLinks = option.linksToFlag
+		? Array.from(container.querySelectorAll(option.linksToFlag))
+		: [];
+	let $badDevLinks = $findbadDevLinks.filter(
+		($el) => !containerExclusions.includes($el)
+	);
+
+	const $findPDFs = Array.from(container.querySelectorAll("a[href$='.pdf']"));
+	let $checkPDF = $findPDFs.filter(($el) => !containerExclusions.includes($el));
+
+	const $findtables = Array.from(
+		container.querySelectorAll("table:not([role='presentation'])")
+	);
+	let $tables = $findtables.filter(($el) => !containerExclusions.includes($el));
+
+	let $lang = document.querySelector("html").getAttribute("lang");
+
 	const $findblockquotes = Array.from(container.querySelectorAll("blockquote"));
 	let $blockquotes = $findblockquotes.filter(
+		($el) => !containerExclusions.includes($el)
+	);
+
+	const $findallcaps = Array.from(
+		container.querySelectorAll(
+			"h1, h2, h3, h4, h5, h6, p, li:not([class^='sa11y']), blockquote"
+		)
+	);
+	let $allCaps = $findallcaps.filter(
 		($el) => !containerExclusions.includes($el)
 	);
 
@@ -123,15 +156,26 @@ export default function () {
 	);
 
 	return {
-		readability: $readability,
-		inputs: $inputs,
-		link: $links,
-		p: $p,
-		h: $h,
-		h1: $h1,
-		images: $img,
-		iframe: $iframes,
-		blockquotes: $blockquotes,
+		$readability: $readability,
+		$inputs: $inputs,
+		$links: $links,
+		$p: $p,
+		$h: $h,
+		$h1: $h1,
+		$img: $img,
+		$iframes: $iframes,
+		$videos: $videos,
+		$audio: $audio,
+		$dataviz: $dataviz,
+		$twitter: $twitter,
+		$embeddedContent: $embeddedContent,
+		$blockquotes: $blockquotes,
+		$strongitalics: $strongitalics,
+		$badDevLinks: $badDevLinks,
+		$checkPDF: $checkPDF,
+		$tables: $tables,
+		$allCaps: $allCaps,
 		$contrast: $contrast,
+		$lang: $lang,
 	};
 }

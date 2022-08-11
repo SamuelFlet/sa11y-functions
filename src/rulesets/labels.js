@@ -1,41 +1,108 @@
-import IssueGenerator from "../components/IssueGenerator";
-import { ERROR } from "../constants";
-import {config} from "../sa11y.config";
+import annotate from "../components/annotate";
+import { ERROR, GOOD, WARNING } from "../constants";
+import { computeAriaLabel } from "../js/utilities";
+import { Lang } from "../js/lang/Lang";
 
-export default function checkLabels({ inputs }) {
-    let errorCount = 0;
-    inputs.each((i, el) => {
-        let $el = $(el);
-        if (
-            !$el.attr("id") &&
-            !$el.attr("aria-label") &&
-            !$el.attr("aria-labelledby")
-        ) {
-            // Missing Label
-            errorCount += 1;
-            $el.addClass("sa11y-error-border");
-            let issueText =
-                "There is no label associated with this input. Please add an <span class='sa11y-kbd'>id</span> to this input, and add a matching <span class='sa11y-kbd'>for</span> attribute to the label.";
-            $el.after(IssueGenerator(ERROR, issueText, true));
-        } else if ($el.attr("aria-label")) {
-            /*Optional: add pass border.*/
-        } else if ($el.prev().is("label")) {
-            let label = $el.prev();
-            if (label.attr("for") == $el.attr("id")) {
-                /*Optional: add pass border.*/
-            } else {
-                // No For Attribute
-                errorCount += 1;
-                $el.addClass("sa11y-error-border");
-                let issueText = `There is no label associated with this input. 
-                    Add a <span class='sa11y-kbd'>for</span> attribute to the label that matches the <span class='sa11y-kbd'>id</span> of this input. 
-                    <hr class='sa11y-hr' aria-hidden='true'>
-                    The ID for this input is: 
-                    <span class='sa11y-bold'>id=&#34;${$el.attr("id")}&#34;
-                    </span>`;
-                $el.after(IssueGenerator(ERROR, issueText, true));
-            }
-        }
-        return { error: errorCount };
-    });
+export default function checkLabels($inputs, root) {
+	$inputs.forEach((el) => {
+		let ariaLabel = computeAriaLabel(el);
+		const type = el.getAttribute("type");
+		const tabindex = el.getAttribute("tabindex");
+
+		// If button type is submit or button: pass
+		if (
+			type === "submit" ||
+			type === "button" ||
+			type === "hidden" ||
+			tabindex === "-1"
+		) {
+			// Do nothing
+		} else if (type === "image") {
+			// Inputs where type="image".
+			const imgalt = el.getAttribute("alt");
+			if (!imgalt || imgalt === " ") {
+				if (el.getAttribute("aria-label")) {
+					// Good.
+				} else {
+					el.classList.add("sa11y-error-border");
+					el.insertAdjacentHTML(
+						"afterend",
+						annotate(
+							ERROR,
+							Lang._("LABELS_MISSING_IMAGE_INPUT_MESSAGE"),
+							true
+						)
+					);
+				}
+			}
+		} else if (type === "reset") {
+			// Recommendation to remove reset buttons.
+			el.classList.add("sa11y-warning-border");
+			el.insertAdjacentHTML(
+				"afterend",
+				annotate(WARNING, Lang._("LABELS_INPUT_RESET_MESSAGE"), true)
+			);
+		} else if (
+			el.getAttribute("aria-label") ||
+			el.getAttribute("aria-labelledby") ||
+			el.getAttribute("title")
+		) {
+			// Uses ARIA. Warn them to ensure there's a visible label.
+			if (el.getAttribute("title")) {
+				ariaLabel = el.getAttribute("title");
+				el.classList.add("sa11y-warning-border");
+				el.insertAdjacentHTML(
+					"afterend",
+					annotate(
+						WARNING,
+						Lang.sprintf("LABELS_ARIA_LABEL_INPUT_MESSAGE", ariaLabel),
+						true
+					)
+				);
+			} else {
+				el.classList.add("sa11y-warning-border");
+				el.insertAdjacentHTML(
+					"afterend",
+					annotate(
+						WARNING,
+						Lang.sprintf("LABELS_ARIA_LABEL_INPUT_MESSAGE", ariaLabel),
+						true
+					)
+				);
+			}
+		} else if (el.closest("label") && el.closest("label").textContent.trim()) {
+			// Implicit labels.
+			// Do nothing if label has text.
+		} else if (el.getAttribute("id")) {
+			// Has an ID but doesn't have a matching FOR attribute.
+			const $labels = root.querySelectorAll("label");
+			let hasFor = false;
+
+			$labels.forEach(($l) => {
+				if (hasFor) return;
+				if ($l.getAttribute("for") === el.getAttribute("id")) {
+					hasFor = true;
+				}
+			});
+
+			if (!hasFor) {
+				el.classList.add("sa11y-error-border");
+				const id = el.getAttribute("id");
+				el.insertAdjacentHTML(
+					"afterend",
+					annotate(
+						ERROR,
+						Lang.sprintf("LABELS_NO_FOR_ATTRIBUTE_MESSAGE", id),
+						true
+					)
+				);
+			}
+		} else {
+			el.classList.add("sa11y-error-border");
+			el.insertAdjacentHTML(
+				"afterend",
+				annotate(ERROR, Lang._("LABELS_MISSING_LABEL_MESSAGE"), true)
+			);
+		}
+	});
 }

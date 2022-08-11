@@ -1,4 +1,4 @@
-import IssueGenerator from "../components/IssueGenerator";
+import annotate from "../components/annotate";
 import { Lang } from "../js/lang/Lang";
 import { ERROR, GOOD, WARNING } from "../constants";
 import { computeAriaLabel, fnIgnore } from "../js/utilities";
@@ -186,16 +186,14 @@ export default function checkContrast($contrast) {
 
 		const nodetext = fnIgnore(clone, "script").textContent;
 		if (name.tagName === "INPUT") {
-			setError(errorCount + 1);
 			name.insertAdjacentHTML(
 				"beforebegin",
-				IssueGenerator(ERROR, Lang.sprintf("CONTRAST_INPUT_ERROR", cratio))
+				annotate(ERROR, Lang.sprintf("CONTRAST_INPUT_ERROR", cratio))
 			);
 		} else {
-			setError(errorCount + 1);
 			name.insertAdjacentHTML(
 				"beforebegin",
-				IssueGenerator(ERROR, Lang.sprintf("CONTRAST_ERROR", cratio, nodetext))
+				annotate(ERROR, Lang.sprintf("CONTRAST_ERROR", cratio, nodetext))
 			);
 		}
 	});
@@ -210,10 +208,9 @@ export default function checkContrast($contrast) {
 			clone.removeChild(removeSa11yHeadingLabel[i]);
 		}
 		const nodetext = fnIgnore(clone, "script").textContent;
-		setWarning(warningCount + 1);
 		name.insertAdjacentHTML(
 			"beforebegin",
-			IssueGenerator(WARNING, Lang.sprintf("CONTRAST_WARNING", nodetext))
+			annotate(WARNING, Lang.sprintf("CONTRAST_WARNING", nodetext))
 		);
 	});
 }

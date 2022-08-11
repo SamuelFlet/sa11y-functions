@@ -1,18 +1,16 @@
 // checkHeaders(headings,ignoreClasses)
-import IssueGenerator from "../components/IssueGenerator";
-import annotateBanner from "../components/bannerGenerator";
+import annotate from "../components/annotate";
+import annotateBanner from "../components/annotateBanner";
 import { ERROR, GOOD, WARNING } from "../constants";
 import { option } from "../js/options";
 import { computeTextNodeWithImage, sanitizeForHTML } from "../js/utilities";
 import { Lang } from "../js/lang/Lang";
-import { errorCount, setError, warningCount, setWarning } from "../constants";
 
-
-export default function checkHeaders( h, h1) {
+export default function checkHeaders($h, $h1) {
 	let prevLevel;
 
 	// For each heading on the page
-	h.forEach(function ($el, i) {
+	$h.forEach(function ($el, i) {
 		const text = computeTextNodeWithImage($el);
 		const htext = sanitizeForHTML(text);
 		let level;
@@ -95,30 +93,28 @@ export default function checkHeaders( h, h1) {
 
 			// Heading errors
 			if (error !== null && $el.closest("a") !== null) {
-				setError(errorCount+1);
 				$el.classList.add("sa11y-error-border");
-				$el.closest('a').insertAdjacentHTML('afterend', IssueGenerator(ERROR, error, true));
+				$el
+					.closest("a")
+					.insertAdjacentHTML("afterend", annotate(ERROR, error, true));
 				document
 					.querySelector("#sa11y-outline-list")
 					.insertAdjacentHTML("beforeend", liError);
 			} else if (error !== null) {
-				setError(errorCount+1);
 				$el.classList.add("sa11y-error-border");
-				$el.insertAdjacentHTML('beforebegin', IssueGenerator(ERROR, error));
+				$el.insertAdjacentHTML("beforebegin", annotate(ERROR, error));
 				document
 					.querySelector("#sa11y-outline-list")
 					.insertAdjacentHTML("beforeend", liError);
 			} else if (warning !== null && $el.closest("a") !== null) {
-				setWarning(warningCount+1);
-				$el.classList.add("sa11y-warning-border");
-				$el.closest('a').insertAdjacentHTML('afterend', IssueGenerator(WARNING, warning));
+				$el
+					.closest("a")
+					.insertAdjacentHTML("afterend", annotate(WARNING, warning));
 				document
 					.querySelector("#sa11y-outline-list")
 					.insertAdjacentHTML("beforeend", liWarning);
 			} else if (warning !== null) {
-				setWarning(warningCount+1);
-				$el.classList.add("sa11y-warning-border");
-				$el.insertAdjacentHTML('beforebegin', IssueGenerator(WARNING, warning));
+				$el.insertAdjacentHTML("beforebegin", annotate(WARNING, warning));
 				document
 					.querySelector("#sa11y-outline-list")
 					.insertAdjacentHTML("beforeend", liWarning);
@@ -130,13 +126,23 @@ export default function checkHeaders( h, h1) {
 		}
 	});
 	// Check to see there is at least one H1 on the page.
-	if (h1.length === 0) {
-        const updateH1Outline = `<div class='sa11y-instance sa11y-missing-h1'>
-                    <span class='sa11y-badge sa11y-error-badge'><span aria-hidden='true'>&#10007;</span><span class='sa11y-visually-hidden'>${Lang._('ERROR')}</span></span>
-                    <span class='sa11y-red-text sa11y-bold'>${Lang._('PANEL_HEADING_MISSING_ONE')}</span>
+	if ($h1.length === 0) {
+		const updateH1Outline = `<div class='sa11y-instance sa11y-missing-h1'>
+                    <span class='sa11y-badge sa11y-error-badge'><span aria-hidden='true'>&#10007;</span><span class='sa11y-visually-hidden'>${Lang._(
+											"ERROR"
+										)}</span></span>
+                    <span class='sa11y-red-text sa11y-bold'>${Lang._(
+											"PANEL_HEADING_MISSING_ONE"
+										)}</span>
                 </div>`;
-        document.getElementById('sa11y-outline-header').insertAdjacentHTML('afterend', updateH1Outline);
-		setError(errorCount+1);
-        document.getElementById('sa11y-container').insertAdjacentHTML('afterend', annotateBanner(ERROR, Lang._('HEADING_MISSING_ONE')));
-      }
+		document
+			.getElementById("sa11y-outline-header")
+			.insertAdjacentHTML("afterend", updateH1Outline);
+		document
+			.getElementById("sa11y-container")
+			.insertAdjacentHTML(
+				"afterend",
+				annotateBanner(ERROR, Lang._("HEADING_MISSING_ONE"))
+			);
+	}
 }
