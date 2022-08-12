@@ -1,4 +1,5 @@
 import { Lang } from "../js/lang/Lang";
+
 export default function buildPanel() {
 	const $outlineToggle = document.getElementById("sa11y-outline-toggle");
 	const $outlinePanel = document.getElementById("sa11y-outline-panel");

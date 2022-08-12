@@ -1,5 +1,3 @@
-import loadGlobals from "../js/LoadGlobals";
-import { config } from "../sa11y.config";
 import { option } from "../js/options";
 import { Lang } from "../js/lang/Lang.js";
 let language = document.getElementsByTagName("html")[0].getAttribute("lang");

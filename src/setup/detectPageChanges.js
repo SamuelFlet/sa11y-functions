@@ -1,6 +1,7 @@
 import {panelActive, setPanel} from "../constants"
 import { option } from "../js/options";
 import { debounce } from "../js/utilities";
+
 export default function detectPageChanges() {
 	// Feature to detect page changes (e.g. SPAs).
 	if (option.detectSPArouting === true) {

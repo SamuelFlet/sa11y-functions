@@ -1,4 +1,4 @@
-import { setPanel,setError,setWarning } from "../constants";
+import { setPanel} from "../constants";
 export default function resetAll (restartPanel = true){
 	setPanel(false);
 

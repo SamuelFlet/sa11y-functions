@@ -1,4 +1,5 @@
 import tippy from 'tippy.js';
+
 import { Lang } from '../js/lang/Lang';
 export default function skipToIssueTooltip() {
 	let keyboardShortcut;

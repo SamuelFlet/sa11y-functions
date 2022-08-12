@@ -2,6 +2,7 @@ import loadGlobals from "../js/LoadGlobals";
 import resetAll from "../js/resetAll";
 import scanPage from "../js/checkAll";
 import updateBadge from "../js/updatebadge.js";
+
 export default function generalSetup() {
 	const elemtoIgnore = loadGlobals();
 	var sa11yToggle = document.querySelector("#sa11y-toggle");

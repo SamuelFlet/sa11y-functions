@@ -1,7 +1,7 @@
 // checkHeaders(headings,ignoreClasses)
 import annotate from "../components/annotate";
 import annotateBanner from "../components/annotateBanner";
-import { ERROR, GOOD, WARNING } from "../constants";
+import { ERROR, WARNING } from "../constants";
 import { option } from "../js/options";
 import { computeTextNodeWithImage, sanitizeForHTML } from "../js/utilities";
 import { Lang } from "../js/lang/Lang";

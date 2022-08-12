@@ -1,5 +1,5 @@
 import { Lang } from "../js/lang/Lang";
-import { ERROR, GOOD, WARNING } from "../constants";
+import { ERROR, WARNING } from "../constants";
 import annotate from "../components/annotate";
 import { option } from "../js/options";
 

@@ -1,5 +1,5 @@
 import annotate from "../components/annotate";
-import { ERROR, GOOD, WARNING } from "../constants";
+import { ERROR, WARNING } from "../constants";
 import { computeAriaLabel } from "../js/utilities";
 import { Lang } from "../js/lang/Lang";
 

@@ -2,7 +2,6 @@ import annotate from "../components/annotate";
 import { Lang } from "../js/lang/Lang";
 import { ERROR, GOOD, WARNING } from "../constants";
 import { computeAriaLabel, fnIgnore } from "../js/utilities";
-import { errorCount, warningCount, setError, setWarning } from "../constants";
 import { option } from "../js/options";
 
 export default function checkLinkText($links) {
