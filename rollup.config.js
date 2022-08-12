@@ -47,42 +47,6 @@ export default [
       },
     ],
   },
-  // Custom checks ESM
-  {
-    input: 'src/js/old/sa11y-custom-checks.js',
-    plugins: [
-      nodeResolve(),
-      css(),
-      replace({
-        preventAssignment: true,
-        'process.env.NODE_ENV': JSON.stringify('production'),
-      }),
-    ],
-    output: [
-      { file: 'dist/js/sa11y-custom-checks.esm.js', format: 'esm' },
-      {
-        file: 'dist/js/sa11y-custom-checks.esm.min.js', format: 'esm', plugins: [terser()],
-      },
-    ],
-  },
-  // Custom checks
-  {
-    input: './src/js/old/sa11y-custom-checks.js',
-    plugins: [
-      nodeResolve(),
-      css(),
-      replace({
-        preventAssignment: true,
-        'process.env.NODE_ENV': JSON.stringify('production'),
-      }),
-    ],
-    output: [
-      { file: 'dist/js/sa11y-custom-checks.umd.js', format: 'umd', name: 'Sa11yCustomChecks' },
-      {
-        file: 'dist/js/sa11y-custom-checks.umd.min.js', format: 'umd', name: 'Sa11yCustomChecks', plugins: [terser()],
-      },
-    ],
-  },
   // Language files
   // {
   //   input: 'src/js/lang/en.js',

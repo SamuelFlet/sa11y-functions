@@ -15,7 +15,7 @@ import checkEmbeddedContent from "../rulesets/embeddedContent";
 import checkLinksAdvanced from "../rulesets/linksAdvanced";
 import checkLabels from "../rulesets/labels";
 import checkQA from "../rulesets/qa";
-import customRules from "../customCheck/customRules";
+import customRules from "../rulesets/customCheck/customRules";
 import initializeTooltips from "./initializeTooltips";
 import { nudge, detectOverflow } from "./utilities";
 

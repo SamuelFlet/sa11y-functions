@@ -1,5 +1,5 @@
-import annotate from "../components/annotate";
-import { ERROR, GOOD, WARNING } from "../constants";
+import annotate from "../../components/annotate";
+import { ERROR, GOOD, WARNING } from "../../constants";
 
 export default function customRules(root) {
 	const C = {
